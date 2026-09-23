@@ -72,6 +72,8 @@ DEFAULT_PARAMETRES = {
     "exclure_sans_salarie": True,
     # France Travail : garder aussi les CDI/CDD (sinon seulement stages et alternances)
     "ft_inclure_emplois": False,
+    # Nombre max d'entreprises analysées par clic sur « Trouver les sites web »
+    "enrichissement_max": 30,
     # Points accordés selon le code NAF (pertinence SISR de l'activité elle-même)
     "naf_poids": {
         "62.02A": 15, "62.03Z": 18, "62.02B": 14, "62.09Z": 12, "63.11Z": 12,

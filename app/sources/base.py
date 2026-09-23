@@ -80,6 +80,7 @@ class Source:
     name: str = "source"            # identifiant technique, stocké en BDD
     label: str = "Source"           # nom affiché dans l'interface
     missing_config_message: str = ""
+    par_defaut: bool = True         # False = lancée uniquement sur demande explicite
 
     def is_configured(self) -> bool:
         """Faux si une clé API nécessaire est absente : la source est alors ignorée."""

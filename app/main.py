@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app import config, db
 from app.services import doublons as doublons_srv
-from app.services import export, gestion, queries, refresh, tracking
+from app.services import enrichissement, export, gestion, queries, refresh, tracking
 
 
 @asynccontextmanager
@@ -201,6 +201,15 @@ def modifier_entreprise(ent_id: int, data: dict):
     with db.get_conn() as conn:
         gestion.modifier_entreprise(conn, ent_id, data)
     return {"ok": True}
+
+
+@app.post("/api/entreprises/{ent_id}/enrichir")
+def enrichir_entreprise(ent_id: int):
+    """Cherche site web / contact / description pour une entreprise (quelques secondes)."""
+    try:
+        return enrichissement.enrichir_une(ent_id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
 
 
 @app.get("/api/cibles/{cible_id}/mail")

@@ -91,12 +91,14 @@ class CachedHttp:
                 r = self.client.request(method, url, params=params, data=data, headers=headers)
             except httpx.HTTPError as exc:
                 last_exc = exc
-                time.sleep(1.5 * (attempt + 1))
+                if attempt < retries - 1:  # pas d'attente inutile après la dernière tentative
+                    time.sleep(1.5 * (attempt + 1))
                 continue
             if r.status_code == 429 or r.status_code >= 500:
                 # Quota dépassé ou serveur en difficulté : on attend puis on réessaie.
                 retry_after = r.headers.get("Retry-After", "")
-                time.sleep(float(retry_after) if retry_after.isdigit() else 2.0 * (attempt + 1))
+                if attempt < retries - 1:
+                    time.sleep(min(float(retry_after), 30) if retry_after.isdigit() else 2.0 * (attempt + 1))
                 last_exc = HttpError(f"HTTP {r.status_code} sur {urlparse(url).hostname}")
                 continue
             if r.status_code in ok_statuses and use_cache and ttl_heures > 0:

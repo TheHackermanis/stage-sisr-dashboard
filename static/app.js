@@ -173,6 +173,7 @@ function suivreRefresh() {
         for (const [nom, s] of Object.entries(e.sources || {})) {
           if (s.statut === "erreur") toast(`⚠️ ${s.label} : ${s.message}`, "error", 12000);
           if (s.statut === "ignoree") toast(`ℹ️ ${s.label} ignorée : ${s.message}`, "info", 9000);
+          if (s.statut === "ok" && s.message) toast(`ℹ️ ${s.label} : ${s.message}`, "info", 9000);
         }
         setTimeout(() => { if (!store.refresh?.en_cours) store.refresh = null; }, 8000);
         toutRecharger();

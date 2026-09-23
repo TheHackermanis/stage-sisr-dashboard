@@ -74,7 +74,8 @@ class RefreshManager:
                 run_id = conn.execute("INSERT INTO refresh_runs DEFAULT VALUES").lastrowid
                 parametres = db.get_parametres(conn)
 
-            sources = [s for s in toutes_les_sources() if not noms or s.name in noms]
+            # Sans liste explicite : toutes les sources « par défaut » (l'enrichissement web est à part)
+            sources = [s for s in toutes_les_sources() if (s.name in noms if noms else s.par_defaut)]
             n = max(len(sources), 1)
             # 90 % de la barre pour les sources, 10 % pour le géocodage / score
             for i, src in enumerate(sources):

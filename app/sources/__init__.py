@@ -17,4 +17,6 @@ def toutes_les_sources() -> list[Source]:
         sources.append(LaBonneBoiteSource())
     except ImportError:
         pass
+    from app.sources.enrichissement_web import EnrichissementWebSource
+    sources.append(EnrichissementWebSource())
     return sources
