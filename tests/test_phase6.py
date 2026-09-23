@@ -97,3 +97,14 @@ def test_detection_doublon_a_l_import(client):
         rec = EntrepriseRecord(nom="OUEST RESEAUX TELECOM", ville="Landerneau", lat=48.45, lon=-4.25)
         _, cree = merge.upsert_entreprise(conn, rec, "france_travail_offres", 20.0)
     assert cree is False
+
+
+def test_rayon_reduit_masque_hors_zone(client):
+    with db.get_conn() as conn:
+        for nom, dist, manuel in [("Proche", 10, 0), ("Loin", 40, 0), ("Loin manuel", 40, 1)]:
+            e = conn.execute("INSERT INTO entreprises (nom, nom_normalise, distance_km, saisie_manuelle) "
+                             "VALUES (?, ?, ?, ?)", (nom, nom.lower(), dist, manuel)).lastrowid
+            conn.execute("INSERT INTO cibles (entreprise_id, type) VALUES (?, 'spontanee')", (e,))
+    assert len(client.get("/api/cibles").json()) == 3
+    client.put("/api/parametres", json={"rayon_km": 30})
+    assert sorted(c["nom"] for c in client.get("/api/cibles").json()) == ["Loin manuel", "Proche"]

@@ -53,6 +53,10 @@ def lister_cibles(conn: sqlite3.Connection, f: dict | None = None) -> list[dict]
     """
     f = f or {}
     rows = [_row_to_dict(r) for r in conn.execute(SELECT_CIBLES).fetchall()]
+    # Rayon strict : si le rayon a été réduit dans les réglages, ce qui est désormais hors zone
+    # est masqué (sauf les saisies manuelles, ajoutées volontairement).
+    row = conn.execute("SELECT valeur FROM parametres WHERE cle = 'rayon_km'").fetchone()
+    rayon = float(json.loads(row[0])) if row else None
 
     corbeille = bool(f.get("corbeille"))
     out = []
@@ -60,6 +64,8 @@ def lister_cibles(conn: sqlite3.Connection, f: dict | None = None) -> list[dict]
     mots = q.split() if q else []
     for d in rows:
         if corbeille != (d["statut"] == "supprime"):
+            continue
+        if rayon and not d["saisie_manuelle"] and d["distance_km"] is not None and d["distance_km"] > rayon:
             continue
         if f.get("statut") and d["statut"] not in f["statut"]:
             continue
