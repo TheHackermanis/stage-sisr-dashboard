@@ -187,7 +187,7 @@ class RefreshManager:
                 _, cree = merge.upsert_offre(conn, off, source, ent_id, dist)
                 resume["nouvelles_offres" if cree else "offres_maj"] += 1
                 nb += 1
-            if result.offres or getattr(result, "offres_complet", False):
+            if result.offres or result.offres_complet:
                 resume["offres_desactivees"] += merge.desactiver_offres_absentes(conn, source, refs_vues)
         return nb
 

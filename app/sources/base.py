@@ -57,6 +57,9 @@ class OffreRecord:
 class SourceResult:
     entreprises: list[EntrepriseRecord] = field(default_factory=list)
     offres: list[OffreRecord] = field(default_factory=list)
+    # True si `offres` contient TOUTES les offres actuelles de la source :
+    # les offres absentes seront alors marquées expirées (jamais supprimées).
+    offres_complet: bool = False
 
 
 class SourceNotConfigured(Exception):

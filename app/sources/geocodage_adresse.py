@@ -9,6 +9,19 @@ from app.services.http_cache import CachedHttp, HttpError
 API_URL = "https://api-adresse.data.gouv.fr/search/"
 
 
+def code_insee(http: CachedHttp, ville: str, code_postal: str | None = None) -> str | None:
+    """Code commune INSEE (ex. Brest -> 29019), utilisé par l'API France Travail."""
+    params = {"q": ville, "type": "municipality", "limit": 1}
+    if code_postal:
+        params["postcode"] = code_postal
+    try:
+        data = http.get_json(API_URL, params=params, ttl_heures=24 * 90)
+    except (HttpError, ValueError):
+        return None
+    feats = (data or {}).get("features") or []
+    return feats[0]["properties"].get("citycode") if feats else None
+
+
 def geocoder(http: CachedHttp, adresse: str | None, code_postal: str | None = None,
              ville: str | None = None) -> tuple[float, float] | None:
     """Renvoie (lat, lon) ou None si l'adresse est introuvable ou l'API indisponible."""

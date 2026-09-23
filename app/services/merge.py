@@ -38,6 +38,8 @@ def trouver_entreprise(conn: sqlite3.Connection, rec: EntrepriseRecord) -> sqlit
         row = conn.execute("SELECT * FROM entreprises WHERE siret = ?", (rec.siret,)).fetchone()
         if row:
             return row
+    if rec.raw.get("anonyme"):
+        return None
     from app.services.doublons import chercher_doublon_nom  # import tardif (évite les cycles)
     return chercher_doublon_nom(conn, rec.nom, rec.ville, siret=rec.siret)
 

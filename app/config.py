@@ -70,6 +70,8 @@ DEFAULT_PARAMETRES = {
     "dsi_effectif_min": 100,
     # Ignore les établissements sans salarié (auto-entrepreneurs) : pas d'encadrement possible.
     "exclure_sans_salarie": True,
+    # France Travail : garder aussi les CDI/CDD (sinon seulement stages et alternances)
+    "ft_inclure_emplois": False,
     # Points accordés selon le code NAF (pertinence SISR de l'activité elle-même)
     "naf_poids": {
         "62.02A": 15, "62.03Z": 18, "62.02B": 14, "62.09Z": 12, "63.11Z": 12,
@@ -92,4 +94,22 @@ DEFAULT_PARAMETRES = {
     "stage_fin": "2027-02-26",
     "stage_duree_min_semaines": 7,
     "stage_duree_max_semaines": 8,
+    # Profil utilisé dans le modèle de mail
+    "profil": {"prenom_nom": "", "email": "", "telephone": "", "ecole": "", "ville": "Brest"},
+    # Modèle de mail de candidature spontanée. Variables : {entreprise} {ville} {poste}
+    # {date_debut} {date_fin} {duree} {prenom_nom} {email} {telephone} {ecole}
+    "modele_mail_objet": "Candidature spontanée – Stage BTS SIO SISR ({duree}) à partir du {date_debut}",
+    "modele_mail": (
+        "Madame, Monsieur,\n\n"
+        "Actuellement en deuxième année de BTS SIO option SISR (Solutions d'Infrastructure, Systèmes "
+        "et Réseaux){ecole_phrase}, je recherche un stage de {duree} à partir du {date_debut} "
+        "(jusqu'au {date_fin} au plus tard).\n\n"
+        "Intéressé(e) par les activités de {entreprise}{poste_phrase}, je souhaiterais mettre mes "
+        "compétences au service de votre équipe : administration Windows Server / Active Directory, "
+        "Linux, réseau (VLAN, routage, pare-feu), virtualisation et support utilisateurs.\n\n"
+        "Vous trouverez ci-joint mon CV. Je me tiens à votre disposition pour un échange téléphonique "
+        "ou un entretien, dans vos locaux à {ville} ou à distance.\n\n"
+        "Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.\n\n"
+        "{prenom_nom}\n{telephone}\n{email}"
+    ),
 }

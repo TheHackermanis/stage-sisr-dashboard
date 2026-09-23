@@ -1,14 +1,16 @@
 """Point d'entrée FastAPI : API JSON sous /api, interface web servie depuis static/."""
 
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app import config, db
-from app.services import queries, refresh, tracking
+from app.services import doublons as doublons_srv
+from app.services import export, gestion, queries, refresh, tracking
 
 
 @asynccontextmanager
@@ -26,7 +28,6 @@ app = FastAPI(title="Dashboard stage SISR", version=config.APP_VERSION, lifespan
 
 @app.exception_handler(tracking.SuiviError)
 async def suivi_error_handler(request: Request, exc: tracking.SuiviError):
-    from fastapi.responses import JSONResponse
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
@@ -172,11 +173,80 @@ def options_filtres():
         return queries.options_filtres(conn)
 
 
+# ---------------------------------------------------------- export
+@app.get("/api/export")
+def exporter(request: Request, format: str = "csv"):
+    """Export de la liste filtrée (mêmes filtres que /api/cibles)."""
+    with db.get_conn() as conn:
+        rows = queries.lister_cibles(conn, filtres_depuis_requete(request))
+    stamp = datetime.now().strftime("%Y%m%d-%H%M")
+    if format == "xlsx":
+        return Response(export.to_xlsx(rows),
+                        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        headers={"Content-Disposition": f'attachment; filename="stages-sisr-{stamp}.xlsx"'})
+    return Response(export.to_csv(rows), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="stages-sisr-{stamp}.csv"'})
+
+
+# ---------------------------------------------------------- saisie manuelle / édition
+@app.post("/api/manuel")
+def ajout_manuel(data: dict):
+    with db.get_conn() as conn:
+        cid = gestion.ajouter_manuel(conn, data)
+        return queries.fiche(conn, cid)
+
+
+@app.patch("/api/entreprises/{ent_id}")
+def modifier_entreprise(ent_id: int, data: dict):
+    with db.get_conn() as conn:
+        gestion.modifier_entreprise(conn, ent_id, data)
+    return {"ok": True}
+
+
+@app.get("/api/cibles/{cible_id}/mail")
+def mail_cible(cible_id: int):
+    with db.get_conn() as conn:
+        return gestion.modele_mail(conn, cible_id)
+
+
+# ---------------------------------------------------------- doublons
+@app.get("/api/doublons")
+def doublons():
+    with db.get_conn() as conn:
+        return doublons_srv.lister_doublons_potentiels(conn)
+
+
+class Fusion(BaseModel):
+    garder_id: int
+    fusion_id: int
+
+
+@app.post("/api/doublons/fusionner")
+def fusionner(body: Fusion):
+    with db.get_conn() as conn:
+        gestion.fusionner_entreprises(conn, body.garder_id, body.fusion_id)
+    return {"ok": True}
+
+
 # ---------------------------------------------------------- paramètres
 @app.get("/api/parametres")
 def lire_parametres():
     with db.get_conn() as conn:
         return db.get_parametres(conn)
+
+
+@app.put("/api/parametres")
+def ecrire_parametres(data: dict):
+    with db.get_conn() as conn:
+        return gestion.maj_parametres(conn, data)
+
+
+@app.post("/api/parametres/reinitialiser")
+def reinitialiser_parametres(cles: list[str]):
+    """Remet les clés indiquées à leur valeur par défaut."""
+    with db.get_conn() as conn:
+        return gestion.maj_parametres(conn, {k: config.DEFAULT_PARAMETRES[k] for k in cles
+                                             if k in config.DEFAULT_PARAMETRES})
 
 
 # Interface web : fichiers statiques + index.html à la racine.
