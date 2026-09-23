@@ -5,7 +5,10 @@ implémenter `fetch()` et l'enregistrer dans la liste des sources (phase 1).
 """
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from app.services.http_cache import CachedHttp
 
 # Callback de progression : (message, fraction entre 0 et 1)
 ProgressCallback = Callable[[str, float], None]
@@ -60,13 +63,24 @@ class SourceNotConfigured(Exception):
     """Levée quand une clé API manque : la source est ignorée, les autres continuent."""
 
 
+@dataclass
+class FetchContext:
+    """Ce que l'orchestrateur fournit à chaque source."""
+    parametres: dict                 # réglages courants (table parametres)
+    http: "CachedHttp"               # client HTTP avec cache et limitation de débit
+    progress: ProgressCallback       # à appeler régulièrement : progress("message", 0.0..1.0)
+    use_cache: bool = True           # False = « forcer l'actualisation »
+    avertissements: list[str] = field(default_factory=list)  # messages non bloquants
+
+
 class Source:
     name: str = "source"            # identifiant technique, stocké en BDD
     label: str = "Source"           # nom affiché dans l'interface
+    missing_config_message: str = ""
 
     def is_configured(self) -> bool:
-        """Faux si une clé API nécessaire est absente."""
+        """Faux si une clé API nécessaire est absente : la source est alors ignorée."""
         return True
 
-    def fetch(self, parametres: dict, progress: ProgressCallback) -> SourceResult:
+    def fetch(self, ctx: FetchContext) -> SourceResult:
         raise NotImplementedError

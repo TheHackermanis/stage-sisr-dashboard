@@ -68,6 +68,13 @@ DEFAULT_PARAMETRES = {
     "naf_sisr": NAF_SISR,
     "naf_dsi_interne": NAF_DSI_INTERNE,
     "dsi_effectif_min": 100,
+    # Ignore les établissements sans salarié (auto-entrepreneurs) : pas d'encadrement possible.
+    "exclure_sans_salarie": True,
+    # Points accordés selon le code NAF (pertinence SISR de l'activité elle-même)
+    "naf_poids": {
+        "62.02A": 15, "62.03Z": 18, "62.02B": 14, "62.09Z": 12, "63.11Z": 12,
+        "61.10Z": 12, "61.20Z": 10, "61.90Z": 12, "95.11Z": 12, "33.20D": 6, "62.01Z": 6,
+    },
     # Poids des mots-clés pour le score (points, négatif = malus)
     "mots_cles": {
         "active directory": 8, "windows server": 8, "linux": 6, "cisco": 6,

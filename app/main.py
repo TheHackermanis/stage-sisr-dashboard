@@ -2,11 +2,14 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from pydantic import BaseModel
+
 from app import config, db
+from app.services import refresh
 
 
 @asynccontextmanager
@@ -45,6 +48,24 @@ def health():
             },
         },
     }
+
+
+class RefreshRequest(BaseModel):
+    sources: list[str] | None = None   # None = toutes
+    force: bool = False                # True = ignorer le cache HTTP
+
+
+@app.post("/api/refresh")
+def lancer_refresh(req: RefreshRequest | None = None):
+    req = req or RefreshRequest()
+    if not refresh.manager.lancer(req.sources, req.force):
+        raise HTTPException(409, "Une actualisation est déjà en cours")
+    return refresh.manager.etat()
+
+
+@app.get("/api/refresh/status")
+def statut_refresh():
+    return refresh.manager.etat()
 
 
 @app.get("/api/parametres")
