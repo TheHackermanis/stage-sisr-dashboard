@@ -6,6 +6,13 @@ from fastapi.testclient import TestClient
 from app import config
 
 
+@pytest.fixture(autouse=True)
+def sans_mot_de_passe(monkeypatch):
+    """Les tests ignorent le mot de passe du vrai .env (test_auth.py l'active lui-même)."""
+    monkeypatch.setattr(config, "APP_PASSWORD_HASH", "")
+    monkeypatch.setattr(config, "SECRET_KEY", "")
+
+
 @pytest.fixture
 def db_path(tmp_path, monkeypatch):
     path = tmp_path / "test.db"
