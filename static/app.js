@@ -49,6 +49,7 @@ async function api(path, opts = {}) {
   const init = { method: opts.method || "GET", headers: {} };
   if (opts.body !== undefined) { init.body = JSON.stringify(opts.body); init.headers["Content-Type"] = "application/json"; }
   const r = await fetch(path, init);
+  if (r.status === 401 && path !== "/api/login") { location.href = "/login"; throw new Error("Connexion requise"); }
   let data = null;
   try { data = await r.json(); } catch (e) { /* pas de JSON */ }
   if (!r.ok) {
@@ -1091,7 +1092,8 @@ const App = {
       if (!h) return "L'API ne répond pas. Le serveur est-il lancé ?";
       return null;
     });
-    return { store, vues, titre, changerTheme, lancerRefresh, avertissement };
+    const deconnexion = async () => { await fetch("/api/logout", { method: "POST" }); location.href = "/login"; };
+    return { store, vues, titre, changerTheme, lancerRefresh, avertissement, deconnexion };
   },
   template: `
   <div class="layout">
@@ -1102,6 +1104,9 @@ const App = {
         <span class="count" v-if="v.id === 'tableau'">{{ store.cibles.length }}</span>
       </button>
       <div class="spacer"></div>
+      <button class="nav-btn" v-if="store.health?.auth" @click="deconnexion" title="Se déconnecter de cet appareil">
+        <span class="ico">🔒</span>Déconnexion
+      </button>
       <button class="nav-btn" @click="changerTheme" :title="'Thème : ' + store.theme">
         <span class="ico">{{ store.theme === 'dark' ? '🌙' : store.theme === 'light' ? '☀️' : '🌓' }}</span>Thème {{ store.theme === 'auto' ? 'auto' : store.theme === 'dark' ? 'sombre' : 'clair' }}
       </button>

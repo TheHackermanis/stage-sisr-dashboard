@@ -4,11 +4,11 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app import config, db
+from app import auth, config, db
 from app.services import doublons as doublons_srv
 from app.services import enrichissement, export, gestion, queries, refresh, tracking
 
@@ -17,13 +17,70 @@ from app.services import enrichissement, export, gestion, queries, refresh, trac
 async def lifespan(app: FastAPI):
     # Au démarrage : création / mise à jour du schéma SQLite (idempotent),
     # puis passage en « À relancer » des candidatures sans réponse.
+    if auth.actif() and len(config.SECRET_KEY) < 32:
+        raise RuntimeError("SECRET_KEY absente ou trop courte dans .env : relance ./set_password.sh")
     db.init_db()
     with db.get_conn() as conn:
         tracking.appliquer_relances_auto(conn)
     yield
 
 
-app = FastAPI(title="Dashboard stage SISR", version=config.APP_VERSION, lifespan=lifespan)
+app = FastAPI(title="Dashboard stage SISR", version=config.APP_VERSION, lifespan=lifespan,
+              # Documentation interactive de l'API désactivée quand le dashboard est protégé
+              docs_url=None if auth.actif() else "/docs", redoc_url=None,
+              openapi_url=None if auth.actif() else "/openapi.json")
+
+
+@app.middleware("http")
+async def exiger_connexion(request: Request, call_next):
+    """Toutes les pages et l'API exigent une session valide (sauf la page de connexion)."""
+    if auth.actif() and not request.url.path.startswith(auth.PUBLICS) \
+            and not auth.session_valide(request.cookies.get(auth.COOKIE)):
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(status_code=401, content={"detail": "Connexion requise"})
+        return RedirectResponse("/login", status_code=303)
+    response = await call_next(request)
+    # En-têtes de sécurité de base
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "same-origin"
+    return response
+
+
+# ---------------------------------------------------------------- connexion
+class Login(BaseModel):
+    mot_de_passe: str
+
+
+@app.get("/login", include_in_schema=False)
+def page_login(request: Request):
+    if not auth.actif() or auth.session_valide(request.cookies.get(auth.COOKIE)):
+        return RedirectResponse("/", status_code=303)
+    return FileResponse(config.STATIC_DIR / "login.html")
+
+
+@app.post("/api/login")
+def login(body: Login, request: Request):
+    if not auth.actif():
+        return {"ok": True}
+    ip = auth.ip_client(request)
+    if auth.bloque(ip):
+        raise HTTPException(429, "Trop de tentatives. Réessaie dans 15 minutes.")
+    if not auth.verifier(body.mot_de_passe, config.APP_PASSWORD_HASH):
+        auth.noter_echec(ip)
+        raise HTTPException(401, "Mot de passe incorrect")
+    auth.reinitialiser(ip)
+    resp = JSONResponse({"ok": True})
+    resp.set_cookie(auth.COOKIE, auth.creer_session(), max_age=auth.DUREE_SESSION, httponly=True,
+                    samesite="strict", secure=auth.est_https(request), path="/")
+    return resp
+
+
+@app.post("/api/logout")
+def logout():
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(auth.COOKIE, path="/")
+    return resp
 
 
 @app.exception_handler(tracking.SuiviError)
@@ -44,6 +101,7 @@ def health():
         "version": config.APP_VERSION,
         "schema_version": schema,
         "nb_cibles": nb_cibles,
+        "auth": auth.actif(),
         "sources": {
             "recherche_entreprises": {"configuree": True},
             "api_adresse": {"configuree": True},

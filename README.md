@@ -118,6 +118,37 @@ l'application visite des sites d'entreprises (bonne pratique).
 
 ---
 
+## 3 bis. Mettre le dashboard en ligne (accès depuis n'importe quel appareil)
+
+Le dashboard continue de tourner **sur ton Mac** : un **tunnel Cloudflare** le rend accessible en HTTPS sur un
+sous-domaine (ex. `https://stage.gcosta.fr`), sans ouvrir de port sur ta box. Il est protégé par **mot de passe**.
+
+**Une seule fois :**
+```bash
+./set_password.sh                         # choisis le mot de passe (12 caractères min.)
+brew install cloudflared
+cloudflared tunnel login                  # autorise ton domaine dans le navigateur
+./setup_tunnel.sh stage.gcosta.fr         # crée le tunnel + l'enregistrement DNS
+```
+**Ensuite, à chaque fois :**
+```bash
+./online.sh                               # lance l'app + le tunnel (Ctrl+C pour arrêter)
+```
+
+Sécurité :
+- sans mot de passe défini, `online.sh` **refuse** de publier le dashboard ;
+- seule l'**empreinte** du mot de passe (scrypt) est stockée dans `.env`, jamais le mot de passe ;
+- session par cookie signé (HttpOnly, Secure, SameSite=Strict, 30 jours), bouton 🔒 Déconnexion ;
+- 5 essais ratés = blocage de l'adresse IP pendant 15 minutes ;
+- changer le mot de passe (`./set_password.sh` puis redémarrer) **déconnecte tous les appareils** ;
+- l'application n'écoute que sur `127.0.0.1` : seul le tunnel peut l'atteindre de l'extérieur.
+
+Limites : le dashboard n'est accessible que **quand ton Mac est allumé** (pas en veille) et `online.sh` lancé.
+Pour une double protection, tu peux ajouter **Cloudflare Access** (gratuit) devant le sous-domaine :
+Cloudflare Zero Trust → Access → Applications → ajoute `stage.gcosta.fr` avec un code envoyé à ton email.
+
+---
+
 ## 4. Sources de données et règles respectées
 
 | Source | Clé | Rôle |

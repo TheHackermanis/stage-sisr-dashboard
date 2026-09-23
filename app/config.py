@@ -28,6 +28,11 @@ FT_CLIENT_ID = os.getenv("FT_CLIENT_ID", "").strip()
 FT_CLIENT_SECRET = os.getenv("FT_CLIENT_SECRET", "").strip()
 USER_AGENT_CONTACT = os.getenv("USER_AGENT_CONTACT", "").strip()
 
+# Mot de passe du dashboard (empreinte scrypt, définie par ./set_password.sh).
+# Vide = pas de mot de passe (usage uniquement local).
+APP_PASSWORD_HASH = os.getenv("APP_PASSWORD_HASH", "").strip()
+SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
+
 
 def france_travail_configured() -> bool:
     """Vrai si les identifiants France Travail sont renseignés dans .env."""

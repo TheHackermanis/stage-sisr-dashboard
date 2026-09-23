@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Connexion · Stage SISR</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖧</text></svg>">
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    try { const t = localStorage.getItem("theme"); if (t === '"dark"' || t === '"light"') document.documentElement.dataset.theme = JSON.parse(t); } catch (e) {}
+  </script>
+  <style>
+    .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+    .login { width: min(380px, 100%); display: flex; flex-direction: column; gap: 14px; }
+    .login h1 { font-size: 1.3rem; }
+    .err { color: var(--danger); min-height: 1.2em; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <form class="card login" id="f">
+      <h1>🖧 Stage SISR</h1>
+      <p class="muted" style="margin:0">Accès protégé. Entre ton mot de passe.</p>
+      <label class="field"><span>Mot de passe</span>
+        <input type="password" id="mdp" autocomplete="current-password" autofocus required></label>
+      <div class="err" id="err"></div>
+      <button class="btn primary" type="submit" id="go" style="justify-content:center">Se connecter</button>
+    </form>
+  </div>
+  <script>
+    document.getElementById("f").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const err = document.getElementById("err"), go = document.getElementById("go");
+      err.textContent = ""; go.disabled = true;
+      try {
+        const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mot_de_passe: document.getElementById("mdp").value }) });
+        if (r.ok) { location.href = "/"; return; }
+        const d = await r.json().catch(() => ({}));
+        err.textContent = d.detail || "Erreur " + r.status;
+      } catch (ex) { err.textContent = "Serveur injoignable"; }
+      go.disabled = false;
+      document.getElementById("mdp").select();
+    });
+  </script>
+</body>
+</html>
