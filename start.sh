@@ -50,6 +50,15 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
 URL="http://${HOST}:${PORT}"
 
+# Déjà lancé (ex. démarrage automatique installé) : on ouvre simplement le navigateur.
+if curl -s -o /dev/null "$URL/login"; then
+  echo "ℹ️  Le dashboard tourne déjà sur $URL"
+  if [ "${NO_BROWSER:-0}" != "1" ]; then
+    if command -v open >/dev/null 2>&1; then open "$URL"; elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$URL"; fi
+  fi
+  exit 0
+fi
+
 # 6. Ouverture du navigateur une fois le serveur prêt (en arrière-plan)
 #    NO_BROWSER=1 ./start.sh pour ne pas l'ouvrir.
 [ "${NO_BROWSER:-0}" = "1" ] || (

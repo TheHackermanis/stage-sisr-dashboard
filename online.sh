@@ -12,6 +12,11 @@ if ! grep -Eq "^APP_PASSWORD_HASH=['\"]?scrypt" .env 2>/dev/null; then
   echo "   (le dashboard ne sera jamais publié en ligne sans mot de passe)" >&2
   exit 1
 fi
+if launchctl list 2>/dev/null | grep -q "local.stage-sisr.tunnel"; then
+  echo "ℹ️  Le démarrage automatique est installé : le dashboard est déjà en ligne."
+  echo "   (./autostart_uninstall.sh pour revenir au lancement manuel)"
+  exit 0
+fi
 [ -f "$CONF" ] || { echo "❌ Tunnel non configuré : lance ./setup_tunnel.sh stage.mondomaine.fr" >&2; exit 1; }
 
 PORT="$(grep -E '^PORT=' .env | cut -d= -f2- | tr -d "[:space:]'\"" || true)"

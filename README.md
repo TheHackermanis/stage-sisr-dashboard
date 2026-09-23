@@ -143,7 +143,17 @@ Sécurité :
 - changer le mot de passe (`./set_password.sh` puis redémarrer) **déconnecte tous les appareils** ;
 - l'application n'écoute que sur `127.0.0.1` : seul le tunnel peut l'atteindre de l'extérieur.
 
-Limites : le dashboard n'est accessible que **quand ton Mac est allumé** (pas en veille) et `online.sh` lancé.
+**Démarrage automatique (macOS)** : plus besoin de lancer quoi que ce soit, l'application et le tunnel
+démarrent à l'ouverture de session et redémarrent seuls en cas d'arrêt.
+```bash
+./autostart_install.sh      # installer (à relancer après une mise à jour du code)
+./autostart_uninstall.sh    # désinstaller
+```
+Journaux : `~/Library/Logs/stage-sisr/app.log` et `tunnel.log`.
+
+Limites : le dashboard n'est accessible que **quand ton Mac est allumé et pas en veille**. Pour qu'il reste
+joignable écran éteint : Réglages Système → Batterie → Options → « Empêcher la suspension automatique
+sur l'adaptateur secteur lorsque l'écran est éteint ».
 Pour une double protection, tu peux ajouter **Cloudflare Access** (gratuit) devant le sous-domaine :
 Cloudflare Zero Trust → Access → Applications → ajoute `stage.gcosta.fr` avec un code envoyé à ton email.
 
