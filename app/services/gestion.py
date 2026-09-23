@@ -218,6 +218,8 @@ def modele_mail(conn: sqlite3.Connection, cible_id: int) -> dict:
 
     corps = (p.get("modele_mail") or "").format_map(_Safe(valeurs))
     objet = (p.get("modele_mail_objet") or "").format_map(_Safe(valeurs))
+    if r["titre"]:  # réponse à une offre : ce n'est plus une candidature spontanée
+        objet = objet.replace("Candidature spontanée", f"Candidature – {r['titre']}", 1)
     return {"objet": objet, "corps": corps, "destinataire": r["email_public"] or ""}
 
 
