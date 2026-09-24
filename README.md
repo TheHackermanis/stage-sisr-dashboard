@@ -143,13 +143,23 @@ Sécurité :
 - changer le mot de passe (`./set_password.sh` puis redémarrer) **déconnecte tous les appareils** ;
 - l'application n'écoute que sur `127.0.0.1` : seul le tunnel peut l'atteindre de l'extérieur.
 
-**Démarrage automatique (macOS)** : plus besoin de lancer quoi que ce soit, l'application et le tunnel
-démarrent à l'ouverture de session et redémarrent seuls en cas d'arrêt.
+**Démarrage automatique** : plus besoin de lancer quoi que ce soit, l'application et le tunnel
+démarrent à l'ouverture de session (ou au boot) et redémarrent seuls en cas d'arrêt.
+
+macOS (LaunchAgents) :
 ```bash
 ./autostart_install.sh      # installer (à relancer après une mise à jour du code)
 ./autostart_uninstall.sh    # désinstaller
 ```
 Journaux : `~/Library/Logs/stage-sisr/app.log` et `tunnel.log`.
+
+Linux (systemd --user, ex. Raspberry Pi / Compute Module) :
+```bash
+sudo loginctl enable-linger $USER    # une fois : les services tournent même sans session ouverte
+./autostart_install_linux.sh         # installer (à relancer après un git pull)
+./autostart_uninstall_linux.sh       # désinstaller
+```
+Journaux : `journalctl --user -u stage-sisr-app -u stage-sisr-tunnel -f`.
 
 Limites : le dashboard n'est accessible que **quand ton Mac est allumé et pas en veille**. Pour qu'il reste
 joignable écran éteint : Réglages Système → Batterie → Options → « Empêcher la suspension automatique
